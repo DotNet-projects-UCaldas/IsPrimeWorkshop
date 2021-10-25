@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Linq;
 using System.Text;
 using System.Threading;
@@ -9,76 +10,72 @@ namespace PrimeWorkShop.Models
 {
     public class MyTask
     {
-        public int NumberOfThreads { get; set; }
-        public long NumberToEvaluate { get; set; }
-        public static List<string> PrimeMessages = new List<string>();
+        private static long NumberToEvaluate { get; set; }
+        private static bool IsComposite = false;
 
-        public MyTask(int NT, long NE)
+
+        public MyTask(long NE)
         {
-            NumberOfThreads = NT;
             NumberToEvaluate = NE;
         }
-        public static void IsPrime(long num)
-        {
-            bool isPrime = false;
-            long countDiv = 2;
-            long limit = (long)(Math.Sqrt(num));
 
-            if (num > 1)
+        public static void IsPrimeGoingUp(long num)
+        {
+            long limit = (long)(Math.Sqrt(num)) / 2;
+            Debug.WriteLine("Limit: " + limit);
+
+            if (num % 2 == 0) IsComposite = true;
+            else
             {
-                if (num % 2 != 0)
+                for (long k = 2; k <= limit; k += 2)
                 {
-                    for (long k = 3; k <= limit && countDiv < 3; k += 2)
+                    if (num % k == 0)
                     {
-                        if (num % k == 0)
-                        {
-                            countDiv++;
-                        }
+                        IsComposite = true;
                     }
+                    if (IsComposite) return;
                 }
-                else if (num != 2)
+            }
+        }
+
+        public static void IsPrimeGoingDown(long num)
+        {
+            long limit = (long)(Math.Sqrt(num));
+            long end = limit / 2;
+            Debug.WriteLine("Limit: " + limit + " end: " + end);
+ 
+            if(num % 2 == 0) IsComposite = true;
+            else
+            {
+                for (long k = limit; k > end; k -= 2)
                 {
-                    countDiv = 3;
+                    if (num % k == 0)
+                    {
+                        IsComposite = true;
+                    }
+                    if (IsComposite) return;
                 }
-
-                isPrime = (countDiv == 2);
             }
-            string message = "The number -" + num + "-" + "it\'s "; 
-            message += isPrime ? "Prime" : "Not Prime";
-
-            lock (PrimeMessages)
-            {
-                PrimeMessages.Add(message);
-            }
-
         }
 
-        public void ExecuteThreads()
+        public void Start()
         {
-            Thread[] theThreads = new Thread[NumberOfThreads];
+            Thread[] theThreads = new Thread[3];
 
-            for (int i = 0; i < NumberOfThreads; i++)
-            {
-                theThreads[i] = new Thread(() => IsPrime(NumberToEvaluate));
-                theThreads[i].Name = "Thread " + i;
-            }
+            theThreads[0] = new Thread(() => IsPrimeGoingUp(NumberToEvaluate));
+            theThreads[0].Name = "Thread N° 1 First Loop";
+            theThreads[0].Start();
 
-            foreach (var thread in theThreads)
-            {
-                thread.Start();
-                thread.Join();
-            }
+            theThreads[1] = new Thread(() => IsPrimeGoingDown(NumberToEvaluate));
+            theThreads[1].Name = "Thread N° 2 Second Loop";
+            theThreads[1].Start();
+
         }
 
-        public string GetMessages(int position)
+        public bool IsPrime()
         {
-            string message = "";
-
-            if(PrimeMessages.Count > 0)
-            {
-                message = PrimeMessages[position];
-            }
-            return message;
+            return IsComposite;
         }
+
     }
 }
